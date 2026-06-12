@@ -344,17 +344,6 @@ const GFORM_ENTRIES = {
     'entry.397503150',  // Q10
   ]
 };
-
-function submitToGoogleForm(name, groupNum, perQ) {
-  const fd = new FormData();
-  fd.append(GFORM_ENTRIES.name, name);
-  fd.append(GFORM_ENTRIES.group, String(groupNum));
-  perQ.forEach((g, i) => fd.append(GFORM_ENTRIES.q[i], String(g)));
-  // fire-and-forget; Google Forms doesn't allow CORS reads but accepts POST
-  fetch(GFORM_URL, { method: 'POST', mode: 'no-cors', body: fd })
-    .catch(err => console.warn('GForm submit failed (non-blocking):', err));
-}
-
 const ARCHETYPE = {
   1: 'Visionary',
   2: 'Energizer',
@@ -363,19 +352,28 @@ const ARCHETYPE = {
   5: 'Strategist'
 };
 
+function submitToGoogleForm(name, groupLabel, perQLabels) {
+  const fd = new FormData();
+  fd.append(GFORM_ENTRIES.name, name);
+  fd.append(GFORM_ENTRIES.group, groupLabel);
+  perQLabels.forEach((label, i) => fd.append(GFORM_ENTRIES.q[i], label));
+  fetch(GFORM_URL, { method: 'POST', mode: 'no-cors', body: fd })
+    .catch(err => console.warn('GForm submit failed (non-blocking):', err));
+}
+
 function showResult() {
   const name = document.getElementById('pname').value.trim();
   const counts = {1:0, 2:0, 3:0, 4:0, 5:0};
-  const perQ = [];
+  const answers = {}; // qi -> group chosen for that question
+  const perQLabels = []; // qi -> full option-text for readable Sheet
   let answered = 0;
   QUESTIONS.forEach((q, qi) => {
     const sel = document.querySelector(`input[name="q${qi}"]:checked`);
     if (sel) {
-      const g = sel.value;
-      counts[g]++;
-      // store full option label (exact text) for readable Sheet column
-      const picked = q.options.find(o => String(o[1]) === String(g));
-      perQ[qi] = picked ? picked[0] : g;
+      counts[sel.value]++;
+      answers[qi] = Number(sel.value);
+      const picked = q.options.find(o => String(o[1]) === String(sel.value));
+      perQLabels[qi] = picked ? picked[0] : sel.value;
       answered++;
     }
   });
@@ -389,13 +387,26 @@ function showResult() {
     hint.textContent = `กรุณาตอบให้ครบทุกข้อ (ตอบแล้ว ${answered}/${QUESTIONS.length})`;
     return;
   }
-  // find group with max count (ties -> lowest group number)
-  let best = 1, bestCount = -1;
+  // find group(s) with max count
+  let bestCount = -1;
   for (let g = 1; g <= 5; g++) {
-    if (counts[g] > bestCount) { bestCount = counts[g]; best = g; }
+    if (counts[g] > bestCount) bestCount = counts[g];
+  }
+  const candidates = [];
+  for (let g = 1; g <= 5; g++) {
+    if (counts[g] === bestCount) candidates.push(g);
+  }
+  // tie-break using the respondent's own answers — most self-descriptive question first
+  // (Q10 = single word that fits self best, Q9 = leisure preference, then earlier questions)
+  let best = candidates[0];
+  if (candidates.length > 1) {
+    const tiebreakOrder = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+    for (const qi of tiebreakOrder) {
+      if (candidates.includes(answers[qi])) { best = answers[qi]; break; }
+    }
   }
   const groupLabel = `${best} - ${ARCHETYPE[best]}`;
-  submitToGoogleForm(name, groupLabel, perQ);
+  submitToGoogleForm(name, groupLabel, perQLabels);
   document.getElementById('result-name').textContent = name;
   document.getElementById('result-group').textContent = best;
   document.getElementById('quiz-form').classList.add('hidden');
