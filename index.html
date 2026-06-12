@@ -327,14 +327,44 @@ function selectOption(qi, oi) {
   document.getElementById(`opt-${qi}-${oi}`).classList.add('selected');
 }
 
+const GFORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdjvVQQpJ2UEg_zITricR5_6xCPeyXtvSLIlI-6_MKQmicWdA/formResponse';
+const GFORM_ENTRIES = {
+  name:  'entry.969802834',
+  group: 'entry.419217405',
+  q: [
+    'entry.1608597214', // Q1
+    'entry.1351887779', // Q2
+    'entry.331661970',  // Q3
+    'entry.1907831696', // Q4
+    'entry.807674245',  // Q5
+    'entry.1355712146', // Q6
+    'entry.1923174479', // Q7
+    'entry.454424373',  // Q8
+    'entry.2013129460', // Q9
+    'entry.397503150',  // Q10
+  ]
+};
+
+function submitToGoogleForm(name, groupNum, perQ) {
+  const fd = new FormData();
+  fd.append(GFORM_ENTRIES.name, name);
+  fd.append(GFORM_ENTRIES.group, String(groupNum));
+  perQ.forEach((g, i) => fd.append(GFORM_ENTRIES.q[i], String(g)));
+  // fire-and-forget; Google Forms doesn't allow CORS reads but accepts POST
+  fetch(GFORM_URL, { method: 'POST', mode: 'no-cors', body: fd })
+    .catch(err => console.warn('GForm submit failed (non-blocking):', err));
+}
+
 function showResult() {
   const name = document.getElementById('pname').value.trim();
   const counts = {1:0, 2:0, 3:0, 4:0, 5:0};
+  const perQ = [];
   let answered = 0;
   QUESTIONS.forEach((q, qi) => {
     const sel = document.querySelector(`input[name="q${qi}"]:checked`);
     if (sel) {
       counts[sel.value]++;
+      perQ[qi] = sel.value;
       answered++;
     }
   });
@@ -353,6 +383,7 @@ function showResult() {
   for (let g = 1; g <= 5; g++) {
     if (counts[g] > bestCount) { bestCount = counts[g]; best = g; }
   }
+  submitToGoogleForm(name, best, perQ);
   document.getElementById('result-name').textContent = name;
   document.getElementById('result-group').textContent = best;
   document.getElementById('quiz-form').classList.add('hidden');
