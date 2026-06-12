@@ -355,6 +355,14 @@ function submitToGoogleForm(name, groupNum, perQ) {
     .catch(err => console.warn('GForm submit failed (non-blocking):', err));
 }
 
+const ARCHETYPE = {
+  1: 'Visionary',
+  2: 'Energizer',
+  3: 'Harmonizer',
+  4: 'Quality',
+  5: 'Strategist'
+};
+
 function showResult() {
   const name = document.getElementById('pname').value.trim();
   const counts = {1:0, 2:0, 3:0, 4:0, 5:0};
@@ -363,8 +371,11 @@ function showResult() {
   QUESTIONS.forEach((q, qi) => {
     const sel = document.querySelector(`input[name="q${qi}"]:checked`);
     if (sel) {
-      counts[sel.value]++;
-      perQ[qi] = sel.value;
+      const g = sel.value;
+      counts[g]++;
+      // store full option label (exact text) for readable Sheet column
+      const picked = q.options.find(o => String(o[1]) === String(g));
+      perQ[qi] = picked ? picked[0] : g;
       answered++;
     }
   });
@@ -383,7 +394,8 @@ function showResult() {
   for (let g = 1; g <= 5; g++) {
     if (counts[g] > bestCount) { bestCount = counts[g]; best = g; }
   }
-  submitToGoogleForm(name, best, perQ);
+  const groupLabel = `${best} - ${ARCHETYPE[best]}`;
+  submitToGoogleForm(name, groupLabel, perQ);
   document.getElementById('result-name').textContent = name;
   document.getElementById('result-group').textContent = best;
   document.getElementById('quiz-form').classList.add('hidden');
