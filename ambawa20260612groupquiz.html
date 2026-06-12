@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แบบสอบถามจัดกลุ่ม — สัมมนาผู้บริหาร</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 0;
+    color: #222;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    margin: 0 0 8px;
+  }
+  header p {
+    color: #666;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .name-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .name-box label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .name-box input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: inherit;
+  }
+  .question {
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .question h3 {
+    font-size: 1.05rem;
+    margin: 0 0 12px;
+    line-height: 1.4;
+  }
+  .question .qnum {
+    display: inline-block;
+    background: #1565C0;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+  }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .option:hover { border-color: #1565C0; }
+  .option input { margin-top: 3px; flex-shrink: 0; }
+  .option.selected {
+    border-color: #1565C0;
+    background: #E3F2FD;
+  }
+  .option span { font-size: 0.98rem; line-height: 1.4; }
+  .submit-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #ddd;
+    padding: 12px 16px;
+    text-align: center;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+  }
+  .submit-bar button {
+    background: #1565C0;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 36px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .submit-bar button:disabled {
+    background: #b0bec5;
+    cursor: not-allowed;
+  }
+  .submit-bar .hint {
+    font-size: 0.85rem;
+    color: #999;
+    margin-top: 6px;
+  }
+  /* Result screen */
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-screen .group-num {
+    font-size: 6rem;
+    font-weight: 800;
+    color: #1565C0;
+    margin: 16px 0;
+  }
+  .result-screen .group-label {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .result-screen p {
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.6;
+  }
+  .result-screen .name-echo {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+  #quiz-form.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>แบบสอบถามจัดกลุ่มกิจกรรม</h1>
+    <p>สัมมนาผู้บริหาร Inner จุฬาฯ — อัมพวา<br>
+    ตอบตามนิสัย/พฤติกรรมการทำงานของตัวท่านจริงๆ ไม่มีคำตอบถูกหรือผิด</p>
+  </header>
+
+  <div id="quiz-form">
+    <div class="name-box">
+      <label for="pname">ชื่อ-นามสกุล</label>
+      <input type="text" id="pname" placeholder="พิมพ์ชื่อของท่าน">
+    </div>
+
+    <div id="questions"></div>
+  </div>
+
+  <div class="result-screen" id="result">
+    <div class="name-echo" id="result-name"></div>
+    <div class="group-label">คุณอยู่กลุ่ม</div>
+    <div class="group-num" id="result-group">-</div>
+    <p>โปรดจดจำเลขกลุ่มของท่าน แล้วรอคำแนะนำจากผู้ดำเนินกิจกรรม<br>
+    ไม่ต้องเปิดหน้าจอให้ผู้อื่นเห็นนะครับ 🙂</p>
+  </div>
+
+  <div class="submit-bar" id="submit-bar">
+    <button id="submit-btn" onclick="showResult()">ดูผลกลุ่มของฉัน</button>
+    <div class="hint" id="hint"></div>
+  </div>
+</div>
+
+<script>
+// Each question: text + 5 options, each tagged with a group number 1-5
+const QUESTIONS = [
+  {
+    text: "เมื่อต้องเริ่มงาน/โปรเจกต์ใหม่ร่วมกับทีม คุณมักจะ...",
+    options: [
+      ["ลงมือทำทันที ชวนทีมลุยด้วยพลัง", 2],
+      ["เสนอวิสัยทัศน์/เป้าหมายระยะยาวให้ทีมเห็นภาพ", 1],
+      ["ช่วยจัดขั้นตอน แบ่งงานให้ทุกคนเข้าใจตรงกัน", 3],
+      ["ตั้งมาตรฐาน/เกณฑ์ความสำเร็จของงานไว้ก่อน", 4],
+      ["สำรวจสถานการณ์/ข้อมูลรอบด้านก่อนเดินหน้า", 5],
+    ]
+  },
+  {
+    text: "ในที่ประชุมทีม คุณมักเป็นคนที่...",
+    options: [
+      ["รับฟัง สรุป ช่วยประสานความเห็นที่ต่างกัน", 3],
+      ["เสนอไอเดียใหม่ มองหาทางพัฒนา", 1],
+      ["พูดเยอะ สร้างพลัง/บรรยากาศให้คึกคัก", 2],
+      ["สังเกตทุกฝ่ายเงียบๆ ก่อนค่อยให้ความเห็น", 5],
+      ["ทักท้วงเรื่องความถูกต้อง/ความเป็นระบบ", 4],
+    ]
+  },
+  {
+    text: "เมื่อทีมเจอปัญหาหรือติดขัด คุณมักจะ...",
+    options: [
+      ["วิเคราะห์หาสาเหตุตามเหตุผล/ข้อมูล", 4],
+      ["ลงมือแก้ไขทันทีอย่างกระตือรือร้น", 2],
+      ["ค่อยๆ ช่วยคลี่คลายอย่างใจเย็น ทีละขั้น", 3],
+      ["มองว่าเป็นโอกาสพัฒนา/ปรับปรุงให้ดีกว่าเดิม", 1],
+      ["หาทางอ้อม ปรับวิธีใหม่ให้เข้ากับสถานการณ์", 5],
+    ]
+  },
+  {
+    text: "เพื่อนร่วมทีมมักพึ่งพาคุณเรื่อง...",
+    options: [
+      ["การวางแผน/มองภาพรวมเชื่อมโยงข้อมูล", 5],
+      ["การช่วยเหลือ/ดูแลรายละเอียดให้คนอื่น", 3],
+      ["การผลักดันให้ทีมพัฒนาไปข้างหน้า", 1],
+      ["ความเรียบร้อย/ความถูกต้องของงาน", 4],
+      ["การสร้างพลังบวก/แรงบันดาลใจให้ทีม", 2],
+    ]
+  },
+  {
+    text: "เวลาต้องตัดสินใจร่วมกับทีม คุณมักจะ...",
+    options: [
+      ["ฟังความเห็นทุกคนแล้วหาทางที่ทุกฝ่ายสบายใจ", 3],
+      ["ยึดหลักการ ข้อมูล และความถูกต้องเป็นหลัก", 4],
+      ["เชื่อสัญชาตญาณ/ความรู้สึกร่วม ตัดสินใจเร็ว", 2],
+      ["ชั่งน้ำหนักหลายทางเลือก เผื่อแผนสำรอง", 5],
+      ["ดูว่าทางเลือกไหนช่วยให้ทีม/งานเติบโตที่สุด", 1],
+    ]
+  },
+  {
+    text: "สิ่งที่ทำให้คุณรู้สึกอึดอัดที่สุด เวลาทำงานกับทีมคือ...",
+    options: [
+      ["งานไม่เป็นระบบ ไม่มีมาตรฐานชัดเจน", 4],
+      ["ความขัดแย้ง บรรยากาศในทีมไม่กลมเกลียว", 3],
+      ["ถูกห้ามไม่ให้เปลี่ยนแปลง/พัฒนาสิ่งที่ไม่ดี", 1],
+      ["ถูกเร่งให้ตัดสินใจโดยไม่มีข้อมูลพอ", 5],
+      ["งานน่าเบื่อ ซ้ำๆ ไม่มีใครตอบสนอง", 2],
+    ]
+  },
+  {
+    text: "เมื่อทีมมีความเห็นไม่ตรงกัน คุณมักจะ...",
+    options: [
+      ["เป็นตัวกลางช่วยประนีประนอม หาจุดที่ทุกคนรับได้", 3],
+      ["ยืนยันในหลักการ/ข้อเท็จจริงที่ถูกต้อง", 4],
+      ["เปิดมุมมองใหม่ที่ยังไม่มีใครคิดถึง", 1],
+      ["แสดงความเห็นตรงๆ ตามที่รู้สึกในตอนนั้น", 2],
+      ["ปรับมุมมองตามสถานการณ์ หาทางที่ลงตัวที่สุด", 5],
+    ]
+  },
+  {
+    text: "ในการทำงานเป็นทีม คุณมักรับบทบาทเป็น...",
+    options: [
+      ["ผู้ริเริ่ม / ผู้วางทิศทางให้ทีม", 1],
+      ["ผู้สร้างพลัง / ผู้เชื่อมความร่วมมือ", 2],
+      ["ผู้สนับสนุน / ผู้ดูแลความเรียบร้อยของทีม", 3],
+      ["ผู้ควบคุมคุณภาพ / ผู้ตรวจทาน", 4],
+      ["ผู้วางแผน / ผู้วิเคราะห์ข้อมูลให้ทีม", 5],
+    ]
+  },
+  {
+    text: "(ส่วนตัวเล็กน้อย) เวลามีเวลาว่าง คุณชอบ...",
+    options: [
+      ["อ่าน/เรียนรู้สิ่งใหม่เพื่อพัฒนาตัวเอง", 1],
+      ["ออกไปพบปะเพื่อน ทำกิจกรรมสนุกตื่นเต้น", 2],
+      ["อยู่กับครอบครัว/คนใกล้ตัว ทำกิจกรรมสบายๆ", 3],
+      ["จัดบ้าน/จัดของให้เป็นระเบียบ", 4],
+      ["ครุ่นคิด ทบทวน หรือไปเที่ยวที่ใหม่ๆ", 5],
+    ]
+  },
+  {
+    text: "(ส่วนตัวเล็กน้อย) ถ้าให้เลือก 1 คำที่ตรงกับตัวเองที่สุด...",
+    options: [
+      ["เติบโต", 1],
+      ["มีพลัง", 2],
+      ["มั่นคง", 3],
+      ["มีหลักการ", 4],
+      ["ปรับตัว", 5],
+    ]
+  },
+];
+
+const container = document.getElementById('questions');
+QUESTIONS.forEach((q, qi) => {
+  const div = document.createElement('div');
+  div.className = 'question';
+  let html = `<div class="qnum">คำถามที่ ${qi+1} / ${QUESTIONS.length}</div><h3>${q.text}</h3>`;
+  // shuffle option display order per question (deterministic by question index)
+  const order = shuffledOrder(q.options.length, qi);
+  order.forEach(oi => {
+    const [label, group] = q.options[oi];
+    const letters = 'ABCDE';
+    html += `
+      <label class="option" id="opt-${qi}-${oi}">
+        <input type="radio" name="q${qi}" value="${group}" onchange="selectOption(${qi}, ${oi})">
+        <span>${label}</span>
+      </label>`;
+  });
+  div.innerHTML = html;
+  container.appendChild(div);
+});
+
+function shuffledOrder(n, seed) {
+  // simple deterministic shuffle so each question has a different option order
+  const arr = [...Array(n).keys()];
+  let s = seed * 9301 + 49297;
+  for (let i = n - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function selectOption(qi, oi) {
+  document.querySelectorAll(`[id^="opt-${qi}-"]`).forEach(el => el.classList.remove('selected'));
+  document.getElementById(`opt-${qi}-${oi}`).classList.add('selected');
+}
+
+function showResult() {
+  const name = document.getElementById('pname').value.trim();
+  const counts = {1:0, 2:0, 3:0, 4:0, 5:0};
+  let answered = 0;
+  QUESTIONS.forEach((q, qi) => {
+    const sel = document.querySelector(`input[name="q${qi}"]:checked`);
+    if (sel) {
+      counts[sel.value]++;
+      answered++;
+    }
+  });
+  const hint = document.getElementById('hint');
+  if (!name) {
+    hint.textContent = 'กรุณากรอกชื่อก่อนนะครับ';
+    document.getElementById('pname').scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  if (answered < QUESTIONS.length) {
+    hint.textContent = `กรุณาตอบให้ครบทุกข้อ (ตอบแล้ว ${answered}/${QUESTIONS.length})`;
+    return;
+  }
+  // find group with max count (ties -> lowest group number)
+  let best = 1, bestCount = -1;
+  for (let g = 1; g <= 5; g++) {
+    if (counts[g] > bestCount) { bestCount = counts[g]; best = g; }
+  }
+  document.getElementById('result-name').textContent = name;
+  document.getElementById('result-group').textContent = best;
+  document.getElementById('quiz-form').classList.add('hidden');
+  document.getElementById('submit-bar').style.display = 'none';
+  document.getElementById('result').classList.add('show');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
